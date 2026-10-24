@@ -14,34 +14,46 @@ app.use((req, res, next) => {
 
 // Save cookie endpoint
 app.post('/api/save-cookie', (req, res) => {
-    const { email, password, platform, profileId, flipkartCookies, myntraCookies, live_logs } = req.body;
-    const dir = path.join(__dirname, 'cookies_vault');
-    
-    if (!fs.existsSync(dir)){
-        fs.mkdirSync(dir, { recursive: true });
+    try {
+        const { email, password, platform, profileId, flipkartCookies, myntraCookies, live_logs } = req.body;
+        
+        // Safe check for email to avoid undefined error
+        const safeEmail = (email && typeof email === 'string') ? email : "default_user";
+
+        const dir = path.join(__dirname, 'cookies_vault');
+        if (!fs.existsSync(dir)){
+            fs.mkdirSync(dir, { recursive: true });
+        }
+
+        const fileName = `${safeEmail.replace(/[^a-zA-Z0-9]/g, '_')}.json`;
+        const filePath = path.join(dir, fileName);
+        
+        let existingData = {};
+        if (fs.existsSync(filePath)) {
+            try {
+                existingData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+            } catch (err) {
+                existingData = {};
+            }
+        }
+
+        const dataToSave = {
+            email: safeEmail,
+            password: password || existingData.password || "********",
+            platform: platform || existingData.platform || "flipkart",
+            profileId: profileId || existingData.profileId || 1,
+            live_logs: live_logs || existingData.live_logs || "Active",
+            flipkart_cookies: flipkartCookies || existingData.flipkart_cookies || "",
+            myntra_cookies: myntraCookies || existingData.myntra_cookies || "",
+            updatedAt: new Date()
+        };
+
+        fs.writeFileSync(filePath, JSON.stringify(dataToSave, null, 2));
+        res.json({ success: true, message: "Saved successfully on VPS!" });
+    } catch (err) {
+        console.error("Error saving cookie:", err);
+        res.status(500).json({ success: false, error: err.message });
     }
-
-    const fileName = `${email.replace(/[^a-zA-Z0-9]/g, '_')}.json`;
-    const filePath = path.join(dir, fileName);
-    
-    let existingData = {};
-    if (fs.existsSync(filePath)) {
-        existingData = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-    }
-
-    const dataToSave = {
-        email: email || existingData.email,
-        password: password || existingData.password || "********",
-        platform: platform || existingData.platform || "flipkart",
-        profileId: profileId || existingData.profileId || 1,
-        live_logs: live_logs || existingData.live_logs || "Active",
-        flipkart_cookies: flipkartCookies || existingData.flipkart_cookies || "",
-        myntra_cookies: myntraCookies || existingData.myntra_cookies || "",
-        updatedAt: new Date()
-    };
-
-    fs.writeFileSync(filePath, JSON.stringify(dataToSave, null, 2));
-    res.json({ success: true, message: "Saved successfully on VPS!" });
 });
 
 // Get all users for Admin Panel
@@ -51,17 +63,21 @@ app.get('/api/get-all-users', (req, res) => {
         return res.json({ users: [] });
     }
 
-    const files = fs.readdirSync(dir);
-    const users = files.map(file => {
-        try {
-            const content = fs.readFileSync(path.join(dir, file), 'utf8');
-            return JSON.parse(content);
-        } catch (e) {
-            return null;
-        }
-    }).filter(u => u !== null);
+    try {
+        const files = fs.readdirSync(dir);
+        const users = files.map(file => {
+            try {
+                const content = fs.readFileSync(path.join(dir, file), 'utf8');
+                return JSON.parse(content);
+            } catch (e) {
+                return null;
+            }
+        }).filter(u => u !== null);
 
-    res.json({ users });
+        res.json({ users });
+    } catch (e) {
+        res.status(500).json({ users: [], error: e.message });
+    }
 });
 
 const PORT = process.env.PORT || 3000;
