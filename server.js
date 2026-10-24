@@ -5,24 +5,24 @@ const app = express();
 
 app.use(express.json());
 
-// Enable CORS for cross-origin requests
+// Enable CORS so admin panel and app can communicate smoothly
 app.use((req, res, next) => {
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
     next();
 });
 
-// Root route
+// Root check route
 app.get('/', (req, res) => {
     res.send("Little Browser VPS Server is Running Live!");
 });
 
-// 1. Save or Update Cookie Endpoint
+// 1. Save or Update Cookie and Logs Endpoint
 app.post('/api/save-cookie', (req, res) => {
     try {
         const { email, password, platform, profileId, flipkartCookies, myntraCookies, live_logs } = req.body;
         
-        // Sanitize email to prevent file system errors
+        // Clean email to use as a safe filename
         const safeEmail = (email && typeof email === 'string' && email.trim() !== "") 
             ? email.trim() 
             : "guest_user";
