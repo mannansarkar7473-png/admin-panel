@@ -3,27 +3,148 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Cloud Master Admin Panel</title>
+    <title>Cloud Master Admin Dashboard</title>
     <style>
-        body { background-color: #0B132B; color: #FFFFFF; font-family: Arial, sans-serif; padding: 20px; }
-        h1 { color: #4CC9F0; font-size: 18px; text-align: center; }
-        .box { background-color: #1C2541; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
-        pre { white-space: pre-wrap; word-wrap: break-word; color: #FFFFFF; font-size: 12px; }
-        button { background-color: #3A506B; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; width: 100%; margin-bottom: 10px; font-weight: bold; }
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --accent-color: #38bdf8;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+            --success: #22c55e;
+            --border: #334155;
+        }
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        h1 {
+            color: var(--accent-color);
+            font-size: 22px;
+            margin: 0;
+        }
+        .status-badge {
+            background-color: rgba(34, 197, 94, 0.1);
+            color: var(--success);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            border: 1px solid var(--success);
+        }
+        .grid-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media(max-width: 768px) {
+            .grid-container { grid-template-columns: 1fr; }
+        }
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        }
+        .card h3 {
+            margin-top: 0;
+            color: var(--accent-color);
+            font-size: 16px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 10px;
+        }
+        .stat-box {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 10px;
+            font-size: 14px;
+        }
+        .stat-value {
+            font-weight: bold;
+            color: var(--text-main);
+        }
+        pre {
+            background-color: #0b0f19;
+            color: #38bdf8;
+            padding: 12px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 12px;
+            max-height: 250px;
+            border: 1px solid var(--border);
+        }
+        .btn-refresh {
+            background-color: var(--accent-color);
+            color: #0f172a;
+            border: none;
+            padding: 10px 18px;
+            border-radius: 8px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+        .btn-refresh:hover {
+            opacity: 0.9;
+        }
+        .full-width {
+            grid-column: span 2;
+        }
+        @media(max-width: 768px) {
+            .full-width { grid-column: span 1; }
+        }
     </style>
 </head>
 <body>
-    <h1>🛡️ CLOUD MASTER ADMIN PANEL</h1>
-    <button onclick="fetchCloudData()">🔄 Force Refresh Data</button>
-    
-    <div class="box">
-        <h3>🔥 Live Activity Feed</h3>
-        <pre id="liveLogs">Loading live logs...</pre>
-    </div>
 
-    <div class="box">
-        <h3>📦 Cloud Data Vault</h3>
-        <pre id="cloudData">Loading vault data...</pre>
+    <header>
+        <h1>🛡️ CLOUD MASTER ADMIN DASHBOARD</h1>
+        <div style="display: flex; align-items: center; gap: 15px;">
+            <span class="status-badge">● Live Synced</span>
+            <button class="btn-refresh" onclick="fetchCloudData()">🔄 Refresh Data</button>
+        </div>
+    </header>
+
+    <div class="grid-container">
+        <!-- Quick Stats / User Overview -->
+        <div class="card">
+            <h3>👤 Active User Session</h3>
+            <div class="stat-box">
+                <span>User Email:</span>
+                <span id="txtUser" class="stat-value">Loading...</span>
+            </div>
+            <div class="stat-box">
+                <span>Target Platform:</span>
+                <span id="txtPlatform" class="stat-value">Loading...</span>
+            </div>
+            <div class="stat-box">
+                <span>Connection Status:</span>
+                <span class="stat-value" style="color: var(--success);">Connected & Active</span>
+            </div>
+        </div>
+
+        <!-- Live Activity Feed -->
+        <div class="card">
+            <h3>🔥 Real-time Activity Feed</h3>
+            <pre id="liveLogs">Fetching live activity...</pre>
+        </div>
+
+        <!-- Raw JSON Data Vault -->
+        <div class="card full-width">
+            <h3>📦 Cloud Data Vault (Raw JSON Payload)</h3>
+            <pre id="cloudData">Loading vault records...</pre>
+        </div>
     </div>
 
     <script>
@@ -38,14 +159,18 @@
                 const result = await response.json();
                 const record = result.record;
                 
-                document.getElementById("liveLogs").innerText = record.live_logs || "No live logs found.";
-                document.getElementById("cloudData").innerText = JSON.stringify(record, null, 2);
+                // Update UI fields
+                document.getElementById("txtUser").innerText = record.user || "N/A";
+                document.getElementById("txtPlatform").innerText = record.platform ? record.platform.toUpperCase() : "N/A";
+                document.getElementById("liveLogs").innerText = record.live_logs || "No logs recorded yet.";
+                document.getElementById("cloudData").innerText = JSON.stringify(record, null, 4);
             } catch (error) {
-                console.error("Error fetching data:", error);
+                console.error("Error fetching cloud data:", error);
+                document.getElementById("liveLogs").innerText = "Error connecting to Cloud API.";
             }
         }
 
-        // Har 3 second mein auto-refresh hoga
+        // Auto refresh every 3 seconds
         setInterval(fetchCloudData, 3000);
         fetchCloudData();
     </script>
