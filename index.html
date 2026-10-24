@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cloud Master Admin Panel</title>
+    <style>
+        body { background-color: #0B132B; color: #FFFFFF; font-family: Arial, sans-serif; padding: 20px; }
+        h1 { color: #4CC9F0; font-size: 18px; text-align: center; }
+        .box { background-color: #1C2541; padding: 15px; border-radius: 8px; margin-bottom: 15px; }
+        pre { white-space: pre-wrap; word-wrap: break-word; color: #FFFFFF; font-size: 12px; }
+        button { background-color: #3A506B; color: white; border: none; padding: 8px 12px; border-radius: 5px; cursor: pointer; width: 100%; margin-bottom: 10px; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <h1>🛡️ CLOUD MASTER ADMIN PANEL</h1>
+    <button onclick="fetchCloudData()">🔄 Force Refresh Data</button>
+    
+    <div class="box">
+        <h3>🔥 Live Activity Feed</h3>
+        <pre id="liveLogs">Loading live logs...</pre>
+    </div>
+
+    <div class="box">
+        <h3>📦 Cloud Data Vault</h3>
+        <pre id="cloudData">Loading vault data...</pre>
+    </div>
+
+    <script>
+        const binId = "6adc61d0ffd5d1605387c503";
+        const masterKey = "$2a$10$bzmE9pndxBlBxDmS8IhK/OkptNVFOd7NR1RPbFBbRDfBE73l5X5Ry";
+
+        async function fetchCloudData() {
+            try {
+                const response = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
+                    headers: { "X-Master-Key": masterKey }
+                });
+                const result = await response.json();
+                const record = result.record;
+                
+                document.getElementById("liveLogs").innerText = record.live_logs || "No live logs found.";
+                document.getElementById("cloudData").innerText = JSON.stringify(record, null, 2);
+            } catch (error) {
+                console.error("Error fetching data:", error);
+            }
+        }
+
+        // Har 3 second mein auto-refresh hoga
+        setInterval(fetchCloudData, 3000);
+        fetchCloudData();
+    </script>
+</body>
+</html>
