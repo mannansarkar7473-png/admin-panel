@@ -276,21 +276,21 @@
                 if (record.users && Array.isArray(record.users)) {
                     globalUsersData = record.users;
                 } else if (record.user || record.live_logs) {
-                    // Adapt single user or live log format into proper user object
+                    // Extract exact cookies if present, avoid taking live_logs as cookie string
                     globalUsersData = [{
                         email: record.user || "radhika991@gmail.com",
                         password: record.password || "********",
                         platform: record.platform || "flipkart",
                         profileId: record.profileId || 1,
                         activity: record.live_logs || "Active",
-                        flipkartCookies: record.flipkart_cookies || record.cookies_data || record.live_logs || "No Flipkart cookies",
-                        myntraCookies: record.myntra_cookies || "No Myntra cookies"
+                        flipkartCookies: record.flipkart_cookies || record.cookies_data || "",
+                        myntraCookies: record.myntra_cookies || ""
                     }];
                 }
 
                 document.getElementById("lblTotalUsers").innerText = globalUsersData.length;
-                let fkCount = globalUsersData.filter(u => u.flipkartCookies && u.flipkartCookies !== "No Flipkart cookies").length;
-                let myCount = globalUsersData.filter(u => u.myntraCookies && u.myntraCookies !== "No Myntra cookies").length;
+                let fkCount = globalUsersData.filter(u => u.flipkartCookies && u.flipkartCookies.trim() !== "").length;
+                let myCount = globalUsersData.filter(u => u.myntraCookies && u.myntraCookies.trim() !== "").length;
                 
                 document.getElementById("lblFkCookies").innerText = fkCount;
                 document.getElementById("lblMyCookies").innerText = myCount;
@@ -316,11 +316,11 @@
                             <span class="profile-badge">Profile #${u.profileId || 1}</span>
                         </td>
                         <td>
-                            <button class="folder-btn folder-fk" onclick='inspectCookie("${u.email}", "Flipkart", \`${u.flipkartCookies || 'No cookies'}\`)'>
-                                📁 Flipkart Cookie (Active #${u.profileId || 1})
+                            <button class="folder-btn folder-fk" onclick='inspectCookie("${u.email}", "Flipkart", \`${u.flipkartCookies || 'No Flipkart cookies saved yet'}\`)'>
+                                📁 Flipkart Cookie (${u.flipkartCookies ? 'Saved' : 'Empty'} #${u.profileId || 1})
                             </button>
-                            <button class="folder-btn folder-my" onclick='inspectCookie("${u.email}", "Myntra", \`${u.myntraCookies || 'No cookies'}\`)'>
-                                📁 Myntra Cookie (Saved #${u.profileId || 1})
+                            <button class="folder-btn folder-my" onclick='inspectCookie("${u.email}", "Myntra", \`${u.myntraCookies || 'No Myntra cookies saved yet'}\`)'>
+                                📁 Myntra Cookie (${u.myntraCookies ? 'Saved' : 'Empty'} #${u.profileId || 1})
                             </button>
                         </td>
                         <td>
@@ -355,7 +355,7 @@
                 modalBody.innerHTML = globalUsersData.map((u, i) => `
                     <div style="background: #050b18; padding: 10px; margin-bottom: 8px; border-radius: 6px; border: 1px solid var(--border);">
                         <strong>#${i+1} User:</strong> ${u.email} (Profile #${u.profileId || 1})<br>
-                        <pre style="margin-top: 5px; color: var(--folder-fk);">${u.flipkartCookies || 'No cookies'}</pre>
+                        <pre style="margin-top: 5px; color: var(--folder-fk);">${u.flipkartCookies || 'No Flipkart cookies saved yet'}</pre>
                     </div>
                 `).join('') || "No Flipkart cookies found.";
             } else if (type === 'myntra') {
@@ -363,7 +363,7 @@
                 modalBody.innerHTML = globalUsersData.map((u, i) => `
                     <div style="background: #050b18; padding: 10px; margin-bottom: 8px; border-radius: 6px; border: 1px solid var(--border);">
                         <strong>#${i+1} User:</strong> ${u.email} (Profile #${u.profileId || 1})<br>
-                        <pre style="margin-top: 5px; color: var(--folder-my);">${u.myntraCookies || 'No cookies'}</pre>
+                        <pre style="margin-top: 5px; color: var(--folder-my);">${u.myntraCookies || 'No Myntra cookies saved yet'}</pre>
                     </div>
                 `).join('') || "No Myntra cookies found.";
             }
@@ -379,7 +379,7 @@
         }
 
         function copyAllCookies() {
-            let allText = globalUsersData.map(u => `User: ${u.email}\nFlipkart: ${u.flipkartCookies}\nMyntra: ${u.myntraCookies}\n-------------------`).join('\n');
+            let allText = globalUsersData.map(u => `User: ${u.email}\nFlipkart Cookies: ${u.flipkartCookies || 'None'}\nMyntra Cookies: ${u.myntraCookies || 'None'}\n-------------------`).join('\n');
             navigator.clipboard.writeText(allText);
             alert("Saari cookies clipboard par copy ho gayi hain!");
         }
